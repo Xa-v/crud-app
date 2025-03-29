@@ -30,9 +30,11 @@ export async function POST(req: Request) {
       )
     }
 
+    // Get the database connection (initialized once)
     const AppDataSource = await getDatabaseConnection()
     const userRepository = AppDataSource.getRepository(Users)
 
+    // Create and save new user
     const newUser = userRepository.create({ name, email })
     await userRepository.save(newUser)
 

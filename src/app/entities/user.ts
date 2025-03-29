@@ -3,12 +3,12 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
 
 @Entity()
 export class Users {
-  @PrimaryGeneratedColumn()
-  id!: number
+  @PrimaryGeneratedColumn('uuid') // Use 'uuid' to auto-generate UUID
+  id!: string // UUID is stored as a string
 
-  @Column()
+  @Column({ type: 'text' }) // Define text column type explicitly for SQLite
   name!: string
 
-  @Column({ unique: true })
+  @Column({ type: 'text', unique: true }) // Explicitly set as text for SQLite
   email!: string
 }

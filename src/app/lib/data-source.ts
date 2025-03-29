@@ -3,20 +3,18 @@ import { DataSource } from 'typeorm'
 import { Users } from '@/app/entities/user' // Import your entity files
 
 export const AppDataSource = new DataSource({
-  type: 'mysql',
-  host: process.env.DATABASE_HOST as string,
-  port: Number(process.env.DATABASE_PORT) || 3306,
-  username: process.env.DATABASE_USER as string,
-  password: process.env.DATABASE_PASSWORD as string,
-  database: process.env.DATABASE_NAME as string,
+  type: 'sqlite',
+  database: './src/app/lib/database.sqlite', // SQLite database file
   entities: [Users], // Add all your entities here
   synchronize: true, // Set to false in production
   logging: true, // Set to false in production
 })
-
+ 
 export const getDatabaseConnection = async () => {
   if (!AppDataSource.isInitialized) {
     await AppDataSource.initialize()
   }
+  
+
   return AppDataSource
 }
