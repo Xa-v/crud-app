@@ -1,73 +1,155 @@
 'use client'
-import { useState } from 'react'
-import { addItem, deleteItem, updateItem } from '@/app/api/items/route'
+
+import { useEffect, useState } from 'react'
+
+type User = {
+  id: number
+  name: string
+  email: string
+}
 
 export default function Home() {
-  const [items, setItems] = useState<{ id: number; name: string }[]>([])
-  const [newItem, setNewItem] = useState('')
-  const [counter, setCounter] = useState(1)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editText, setEditText] = useState('')
+  const [users, setUsers] = useState<User[]>([])
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch users
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/users')
+      const data = await res.json()
+      setUsers(data)
+    } catch (err) {
+      setError('Failed to load users.')
+    }
+    setLoading(false)
+  }
+
+  // Create User
+  const handleCreate = async () => {
+    if (!name || !email) return alert('Name and Email are required!')
+
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email }),
+    })
+
+    if (res.ok) {
+      setName('')
+      setEmail('')
+      fetchUsers()
+    } else {
+      alert('Failed to create user.')
+    }
+  }
+
+  // Update User
+  const handleUpdate = async (id: number) => {
+    const newName = prompt('Enter new name:')
+    if (!newName) return
+
+    const res = await fetch('/api/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name: newName }),
+    })
+
+    if (res.ok) {
+      fetchUsers()
+    } else {
+      alert('Failed to update user.')
+    }
+  }
+
+  // Delete User
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this user?')) return
+
+    const res = await fetch('/api/users', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+
+    if (res.ok) {
+      fetchUsers()
+    } else {
+      alert('Failed to delete user.')
+    }
+  }
 
   return (
-    <div className='p-4 max-w-md mx-auto'>
-      <h1 className='text-xl font-bold mb-4'>CRUD App </h1>
-      <input
-        type='text'
-        value={newItem}
-        onChange={(e) => setNewItem(e.target.value)}
-        className='border p-2 w-full'
-        placeholder='Enter item name'
-      />
-      <button
-        onClick={() => addItem(newItem, items, setItems, counter, setCounter)}
-        className='mt-2 bg-blue-500 text-white px-4 py-2'
-      >
-        Add
-      </button>
-      <ul className='mt-4'>
-        {items.map((item) => (
-          <li key={item.id} className='flex justify-between p-2 border-b'>
-            {editingId === item.id ? (
-              <input
-                type='text'
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className='border p-1'
-              />
-            ) : (
-              item.name
-            )}
-            {editingId === item.id ? (
-              <button
-                onClick={() => {
-                  updateItem(item.id, editText, items, setItems)
-                  setEditingId(null)
-                }}
-                className='text-green-500 ml-2'
-              >
-                Save
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setEditingId(item.id)
-                  setEditText(item.name)
-                }}
-                className='text-yellow-500 ml-2'
-              >
-                Edit
-              </button>
-            )}
-            <button
-              onClick={() => deleteItem(item.id, items, setItems)}
-              className='text-red-500 ml-2'
+    <div className='max-w-lg mx-auto p-4'>
+      <h1 className='text-2xl font-bold mb-4'>User Management</h1>
+
+      {/* Create User Form */}
+      <div className='mb-4'>
+        <input
+          type='text'
+          placeholder='Name'
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className='border p-2 rounded mr-2'
+        />
+        <input
+          type='email'
+          placeholder='Email'
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className='border p-2 rounded mr-2'
+        />
+        <button
+          onClick={handleCreate}
+          className='bg-blue-500 text-white px-4 py-2 rounded'
+        >
+          Add
+        </button>
+      </div>
+
+      {/* Display Users */}
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p className='text-red-500'>{error}</p>
+      ) : users.length > 0 ? (
+        <ul className='space-y-2'>
+          {users.map((user) => (
+            <li
+              key={user.id}
+              className='border p-2 flex justify-between items-center'
             >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+              <div>
+                <p className='font-semibold'>{user.name}</p>
+                <p className='text-gray-600'>{user.email}</p>
+              </div>
+              <div>
+                <button
+                  onClick={() => handleUpdate(user.id)}
+                  className='bg-yellow-500 text-white px-2 py-1 rounded mr-2'
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(user.id)}
+                  className='bg-red-500 text-white px-2 py-1 rounded'
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No users found.</p>
+      )}
     </div>
   )
 }
