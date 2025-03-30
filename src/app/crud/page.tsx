@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
+import Link from 'next/link'
+
 type User = {
   id: number
   name: string
@@ -100,10 +102,13 @@ export default function Crud() {
     <div className='max-w-lg mx-auto p-4'>
       <h1 className='text-2xl font-bold mb-4'>User Management</h1>
 
-      <p>Logged in as {session?.user?.email}</p>
+      <p className='mb-5'>Logged in as {session?.user?.email}</p>
+      <Link href='/dashboard' className='bg-white p-2 text-black rounded'>
+        Dashboard
+      </Link>
 
       {/* Create User Form */}
-      <div className='mb-4'>
+      <div className='my-4'>
         <input
           type='text'
           placeholder='Name'
@@ -120,7 +125,7 @@ export default function Crud() {
         />
         <button
           onClick={handleCreate}
-          className='bg-blue-500 text-white px-4 py-2 rounded'
+          className='bg-blue-500 text-white px-4 py-2 rounded mt-4'
         >
           Add
         </button>
