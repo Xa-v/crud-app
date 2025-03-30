@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 type User = {
   id: number
@@ -15,7 +17,16 @@ export default function Crud() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
   // Fetch users
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/')
+    }
+  }, [status, router])
+
   useEffect(() => {
     fetchUsers()
   }, [])
@@ -89,6 +100,8 @@ export default function Crud() {
   return (
     <div className='max-w-lg mx-auto p-4'>
       <h1 className='text-2xl font-bold mb-4'>User Management</h1>
+
+      <p>Logged in as {session?.user?.email}</p>
 
       {/* Create User Form */}
       <div className='mb-4'>
