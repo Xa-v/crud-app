@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDatabaseConnection } from '@/app/lib/data-source'
-import { Users } from '@/app/entities/user'
+import { Users } from '@/app/lib/entities/user'
 
 export async function GET() {
   try {

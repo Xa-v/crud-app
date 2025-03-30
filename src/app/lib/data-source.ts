@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
-import { Users } from '@/app/entities/user' // Import your entity files
+import { Users } from '@/app/lib/entities/user' // Import your entity files
 
 export const AppDataSource = new DataSource({
   type: 'sqlite',
@@ -9,12 +9,11 @@ export const AppDataSource = new DataSource({
   synchronize: true, // Set to false in production
   logging: true, // Set to false in production
 })
- 
+
 export const getDatabaseConnection = async () => {
   if (!AppDataSource.isInitialized) {
     await AppDataSource.initialize()
   }
-  
 
   return AppDataSource
 }

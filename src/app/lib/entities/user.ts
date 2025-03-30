@@ -11,4 +11,10 @@ export class Users {
 
   @Column({ type: 'text', unique: true }) // Explicitly set as text for SQLite
   email!: string
+
+  @Column()
+  password!: string
+
+  @Column({ default: 'user' })
+  role!: string
 }
