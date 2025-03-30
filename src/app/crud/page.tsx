@@ -20,16 +20,15 @@ export default function Crud() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  // Fetch users
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/')
     }
-  }, [status, router])
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
+    if (status === 'authenticated') {
+      fetchUsers()
+    }
+  }, [status, router])
 
   const fetchUsers = async () => {
     setLoading(true)
