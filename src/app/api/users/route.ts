@@ -4,22 +4,28 @@ import { getDatabaseConnection } from '@/app/lib/data-source'
 import { Users } from '@/app/lib/entities/user'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
-export async function GET() {
+async function getUserRepository() {
+  const db = await getDatabaseConnection()
+  return db.getRepository(Users)
+}
+
+async function authenticate() {
   const session = await getServerSession(authOptions)
   if (!session) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
+  return null
+}
+
+export async function GET() {
+  const authError = await authenticate()
+  if (authError) return authError
 
   try {
-    const AppDataSource = await getDatabaseConnection()
-    const userRepository = AppDataSource.getRepository(Users)
-
+    const userRepository = await getUserRepository()
     const users = await userRepository.find()
-    console.log('Fetched users from DB:', users)
-
     return NextResponse.json(users, { status: 200 })
   } catch (error) {
-    console.error('Database Error:', error)
     return NextResponse.json(
       { message: 'Internal Server Error' },
       { status: 500 }
@@ -28,10 +34,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = await authenticate()
+  if (authError) return authError
 
   try {
     const { name, email } = await req.json()
@@ -42,9 +46,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const AppDataSource = await getDatabaseConnection()
-    const userRepository = AppDataSource.getRepository(Users)
-
+    const userRepository = await getUserRepository()
     const newUser = userRepository.create({ name, email })
     await userRepository.save(newUser)
 
@@ -58,10 +60,8 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = await authenticate()
+  if (authError) return authError
 
   try {
     const { id, name, email } = await req.json()
@@ -72,10 +72,8 @@ export async function PATCH(req: Request) {
       )
     }
 
-    const AppDataSource = await getDatabaseConnection()
-    const userRepository = AppDataSource.getRepository(Users)
+    const userRepository = await getUserRepository()
     const user = await userRepository.findOne({ where: { id } })
-
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 })
     }
@@ -86,7 +84,6 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ message: 'User updated', user }, { status: 200 })
   } catch (error) {
-    console.error('Error updating user:', error)
     return NextResponse.json(
       { message: 'Internal Server Error' },
       { status: 500 }
@@ -95,10 +92,8 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = await authenticate()
+  if (authError) return authError
 
   try {
     const { id } = await req.json()
@@ -109,10 +104,8 @@ export async function DELETE(req: Request) {
       )
     }
 
-    const AppDataSource = await getDatabaseConnection()
-    const userRepository = AppDataSource.getRepository(Users)
+    const userRepository = await getUserRepository()
     const user = await userRepository.findOne({ where: { id } })
-
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 })
     }
@@ -120,7 +113,6 @@ export async function DELETE(req: Request) {
     await userRepository.remove(user)
     return NextResponse.json({ message: 'User deleted' }, { status: 200 })
   } catch (error) {
-    console.error('Error deleting user:', error)
     return NextResponse.json(
       { message: 'Internal Server Error' },
       { status: 500 }
