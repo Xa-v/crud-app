@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import { getDatabaseConnection } from '@/app/lib/data-source'
 import { Users } from '@/app/lib/entities/user'
 
-const authOptions: AuthOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -37,6 +37,26 @@ const authOptions: AuthOptions = {
   ],
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: 'jwt' as 'jwt' }, // Explicitly setting type
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+        token.email = user.email
+      }
+      return token
+    },
+    async session({ session, token }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+          email: token.email,
+        },
+        token: token, // Include token in session
+      }
+    },
+  },
 }
 
 const handler = NextAuth(authOptions)
