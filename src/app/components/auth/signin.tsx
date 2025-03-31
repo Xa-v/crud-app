@@ -7,22 +7,28 @@ import { signIn } from 'next-auth/react'
 export default function SignIn() {
   const router = useRouter()
   const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null) // Reset error state
 
-    const res = await signIn('credentials', {
-      email: form.email,
-      password: form.password,
-      redirect: false,
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(form),
     })
 
-    if (res?.error) {
-      alert('Invalid credentials')
-    } else {
-      alert('Signed in successfully!')
-      router.push('/dashboard') // Redirect to dashboard
+    const data = await res.json()
+
+    if (!res.ok) {
+      throw new Error(data.message || 'Login failed')
     }
+
+    alert('Signed in successfully!')
+    router.push('/dashboard') // Redirect after successful login
   }
 
   return (
@@ -43,6 +49,7 @@ export default function SignIn() {
         className='p-2 border rounded'
         required
       />
+      {error && <p className='text-red-500'>{error}</p>}
       <button
         type='submit'
         className='p-2 bg-blue-500 text-white rounded cursor-pointer'
