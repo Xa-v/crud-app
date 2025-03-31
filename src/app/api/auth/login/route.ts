@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const token = jwt.sign(
     { id: user.id, email: user.email },
     process.env.NEXTAUTH_SECRET!,
-    { expiresIn: '10h' }
+    { expiresIn: '1h' }
   )
 
   // Store token in HTTP-only cookie

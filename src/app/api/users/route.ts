@@ -1,30 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDatabaseConnection } from '@/app/lib/data-source'
 import { Users } from '@/app/lib/entities/user'
-import jwt from 'jsonwebtoken'
 
 async function getUserRepository() {
   const db = await getDatabaseConnection()
   return db.getRepository(Users)
 }
 
-async function authenticate(req: NextRequest) {
-  const cookie = req.cookies.get('next-auth.session-token')
-  if (!cookie) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+// ✅ Fetch session from api/auth/session folder
+async function getSession(req: NextRequest) {
+  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/session`, {
+    method: 'GET',
+    headers: { cookie: req.headers.get('cookie') || '' },
+  })
 
-  try {
-    const decoded = jwt.verify(cookie.value, process.env.NEXTAUTH_SECRET!)
-    return decoded // Return the decoded user session
-  } catch (error) {
-    return NextResponse.json({ message: 'Invalid token' }, { status: 401 })
-  }
+  if (!res.ok) return null
+  return res.json()
 }
 
 export async function GET(req: NextRequest) {
-  const authError = await authenticate(req)
-  if (authError instanceof NextResponse) return authError // If authentication fails, return error response
+  const session = await getSession(req)
+  if (!session) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const userRepository = await getUserRepository()
@@ -39,8 +37,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const authError = await authenticate(req)
-  if (authError instanceof NextResponse) return authError
+  const session = await getSession(req)
+  if (!session) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const { name, email } = await req.json()
@@ -65,8 +65,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const authError = await authenticate(req)
-  if (authError instanceof NextResponse) return authError
+  const session = await getSession(req)
+  if (!session) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const { id, name, email } = await req.json()
@@ -97,8 +99,10 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const authError = await authenticate(req)
-  if (authError instanceof NextResponse) return authError
+  const session = await getSession(req)
+  if (!session) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const { id } = await req.json()
