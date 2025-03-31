@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserRepository, getSession } from '@/app/lib/utils' // Import from utils.ts
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const session = await getSession(req)
   if (!session) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
@@ -9,8 +12,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const userRepository = await getUserRepository()
-    const users = await userRepository.find()
-    return NextResponse.json(users, { status: 200 })
+    const user = await userRepository.findOne({ where: { id: params.id } })
+
+    if (!user) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(user, { status: 200 })
   } catch (error) {
     return NextResponse.json(
       { message: 'Internal Server Error' },
@@ -47,68 +55,37 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const session = await getSession(req)
   if (!session) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const { id, name, email } = await req.json()
-    if (!id || !name || !email) {
+    const updatedFields = await req.json()
+    if (!updatedFields || Object.keys(updatedFields).length === 0) {
       return NextResponse.json(
-        { message: 'ID, name, and email are required' },
+        { message: 'At least one field is required for update' },
         { status: 400 }
       )
     }
 
     const userRepository = await getUserRepository()
-    let user = await userRepository.findOne({ where: { id } })
+    let user = await userRepository.findOne({ where: { id: params.id } })
 
-    if (!user) {
-      user = userRepository.create({ id, name, email })
-    } else {
-      user.name = name
-      user.email = email
-    }
-
-    await userRepository.save(user)
-
-    return NextResponse.json(
-      { message: 'User created/updated', user },
-      { status: 200 }
-    )
-  } catch (error) {
-    return NextResponse.json(
-      { message: 'Internal Server Error' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PATCH(req: NextRequest) {
-  const session = await getSession(req)
-  if (!session) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
-    const { id, name, email } = await req.json()
-    if (!id) {
-      return NextResponse.json(
-        { message: 'User ID is required' },
-        { status: 400 }
-      )
-    }
-
-    const userRepository = await getUserRepository()
-    const user = await userRepository.findOne({ where: { id } })
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 })
     }
 
-    user.name = name || user.name
-    user.email = email || user.email
+    // Prevent updating the ID
+    delete updatedFields.id
+
+    // Apply updates dynamically
+    Object.assign(user, updatedFields)
+
     await userRepository.save(user)
 
     return NextResponse.json({ message: 'User updated', user }, { status: 200 })
@@ -120,23 +97,19 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const session = await getSession(req)
   if (!session) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const { id } = await req.json()
-    if (!id) {
-      return NextResponse.json(
-        { message: 'User ID is required' },
-        { status: 400 }
-      )
-    }
-
     const userRepository = await getUserRepository()
-    const user = await userRepository.findOne({ where: { id } })
+    const user = await userRepository.findOne({ where: { id: params.id } })
+
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 })
     }
